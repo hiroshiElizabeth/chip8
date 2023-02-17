@@ -1,3 +1,4 @@
+use super::Byte;
 use egui::Vec2;
 
 const DISPLAY_WIDTH: usize = 64;
@@ -9,19 +10,46 @@ pub(crate) struct Display {
     t: usize,
 }
 
-impl Display {
-    pub(crate) const fn new() -> Self {
+impl Default for Display {
+    fn default() -> Self {
         Self {
             pixels: [false; DISPLAY_HEIGHT * DISPLAY_WIDTH],
             t: 0,
         }
     }
+}
+
+impl Display {
+    pub(super) fn update(&mut self, x: Byte, y: Byte, n: u16, vf: &mut Byte, sprite: &[Byte]) {
+        *vf = 0;
+        for yy in 0..n {
+            let pixel = sprite[y as usize];
+            for xx in 0..8 {
+                if pixel & (0x80 >> x) == 0 {
+                    continue;
+                }
+                let target = self
+                    .pixels
+                    .get_mut(x as usize + xx as usize + (y as usize + yy as usize) * DISPLAY_WIDTH)
+                    .unwrap();
+                if *target {
+                    *vf = 1;
+                }
+                *target ^= true;
+            }
+        }
+    }
+}
+
+impl Display {
+    /*
     pub(crate) fn update(&mut self) -> &mut Self {
         self.pixels[self.t % (DISPLAY_HEIGHT * DISPLAY_WIDTH)] =
             !self.pixels[self.t % (DISPLAY_HEIGHT * DISPLAY_WIDTH)];
         self.t += 1;
         self
     }
+    */
 }
 
 impl egui::Widget for Display {
@@ -48,4 +76,3 @@ impl egui::Widget for Display {
         response
     }
 }
-
