@@ -18,6 +18,10 @@ impl Display {
     const fn to_index(x: usize, y: usize) -> usize {
         x + y * WIDTH
     }
+    pub(crate) fn flip(&mut self, (x, y): (usize, usize)) -> bool {
+        self[(x, y)] ^= true;
+        self[(x, y)]
+    }
 }
 
 impl Index<(usize, usize)> for Display {
@@ -37,6 +41,25 @@ impl egui::Widget for Display {
     fn ui(self, ui: &mut egui::Ui) -> egui::Response {
         let (response, painter) =
             ui.allocate_painter(ui.available_size(), egui::Sense::focusable_noninteractive());
+        let size = response.rect.size() / egui::vec2(WIDTH as f32, HEIGHT as f32);
+
+        painter.rect_filled(response.rect, egui::Rounding::none(), egui::Color32::BLACK);
+
+        for x in 0..WIDTH {
+            for y in 0..HEIGHT {
+                if !self[(x, y)] {
+                    continue;
+                }
+                painter.rect_filled(
+                    egui::Rect::from_min_size(
+                        response.rect.left_top() + size * egui::vec2(x as f32, y as f32),
+                        size,
+                    ),
+                    egui::Rounding::none(),
+                    egui::Color32::WHITE,
+                );
+            }
+        }
 
         response
     }

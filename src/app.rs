@@ -1,4 +1,4 @@
-use crate::chip8::{MemoryDebuger, Chip8};
+use crate::chip8::{Chip8, MemoryDebuger};
 
 pub struct MainApp {
     chip8: Chip8,
@@ -6,9 +6,7 @@ pub struct MainApp {
 }
 
 impl MainApp {
-    pub fn new(cc: &eframe::CreationContext<'_>) -> Self {
-        cc.egui_ctx.request_repaint();
-
+    pub fn new(_cc: &eframe::CreationContext<'_>) -> Self {
         Self {
             chip8: Chip8::default(),
             debug: [(Box::new(MemoryDebuger::default()), false)],
@@ -27,6 +25,7 @@ impl eframe::App for MainApp {
             }
         });
 
+        ctx.request_repaint();
         egui::CentralPanel::default().show(ctx, |ui| ui.add(*self.chip8.display.lock().unwrap()));
     }
 }

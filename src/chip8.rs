@@ -33,5 +33,15 @@ impl Default for Chip8 {
 }
 
 impl Chip8 {
-    pub(crate) fn update(&mut self) {}
+    pub(crate) fn update(&mut self) {
+        self.display.lock().unwrap().flip((self.x, self.y));
+        self.x += 1;
+        if self.x >= 64 {
+            self.x = 0;
+            self.y += 1;
+            if self.y >= 32 {
+                self.y = 0;
+            }
+        }
+    }
 }
