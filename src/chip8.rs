@@ -3,7 +3,9 @@ use std::sync::Mutex;
 use self::display::{Display, DISPLAY};
 
 pub(crate) mod display;
+pub(crate) mod keypad;
 pub(crate) mod memory;
+pub(crate) mod register;
 pub(crate) mod sprite;
 
 #[derive(Debug, Clone, Copy)]

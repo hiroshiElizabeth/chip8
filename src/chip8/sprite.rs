@@ -1,5 +1,3 @@
-// use super::data::Address;
-
 const SIZE: usize = 80;
 
 const DATA: [u8; SIZE] = [
@@ -20,47 +18,6 @@ const DATA: [u8; SIZE] = [
     0xF0, 0x80, 0xF0, 0x80, 0xF0, // E
     0xF0, 0x80, 0xF0, 0x80, 0x80, // F
 ];
-
-pub(super) mod v2 {
-    use super::*;
-
-    pub(crate) fn load(data: &mut [u8]) -> usize {
-        for i in 0..SIZE {
-            data[i] = DATA[i];
-        }
-        SIZE
-    }
-
-    #[cfg(test)]
-    mod tests {
-        #[test]
-        fn load() {
-            const INIT: u8 = 0xab;
-            const SIZE: usize = 100;
-            const START: usize = 10;
-
-            let data = {
-                let mut data = [INIT; SIZE];
-                let _size = super::load(&mut data[START..]);
-                data
-            };
-
-            let mut i = 0;
-            while i < START {
-                assert_eq!(data[i], INIT);
-                i += 1;
-            }
-            while i < START + super::SIZE {
-                assert_eq!(data[i], super::DATA[i - START]);
-                i += 1;
-            }
-            while i < SIZE {
-                assert_eq!(data[i], INIT);
-                i += 1;
-            }
-        }
-    }
-}
 
 pub(super) const fn load<const N: usize>(mut data: [u8; N], start: usize) -> [u8; N] {
     let mut i = 0;

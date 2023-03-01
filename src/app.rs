@@ -1,15 +1,18 @@
-use crate::chip8::{memory::MemoryDebuger, Chip8};
+use crate::chip8::{keypad::KeyPad, memory::MemoryDebuger, Chip8};
 
 pub struct MainApp {
     chip8: Chip8,
-    debug: [(Box<dyn DebugWindow>, bool); 1],
+    debug: [(Box<dyn DebugWindow>, bool); 2],
 }
 
 impl MainApp {
     pub fn new(_cc: &eframe::CreationContext<'_>) -> Self {
         Self {
             chip8: Chip8::default(),
-            debug: [(Box::new(MemoryDebuger::default()), true)],
+            debug: [
+                (Box::new(MemoryDebuger::default()), false),
+                (Box::new(KeyPad::default()), false),
+            ],
         }
     }
 }
@@ -19,9 +22,11 @@ impl eframe::App for MainApp {
         self.chip8.update();
 
         egui::TopBottomPanel::top("debug").show(ctx, |ui| {
-            self.debug.iter_mut().for_each(|(window, is_open)| {
-                ui.toggle_value(is_open, window.name());
-                window.show(ui.ctx(), is_open);
+            ui.horizontal(|ui| {
+                self.debug.iter_mut().for_each(|(window, is_open)| {
+                    ui.toggle_value(is_open, window.name());
+                    window.show(ui.ctx(), is_open);
+                });
             });
         });
 
