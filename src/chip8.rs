@@ -1,37 +1,24 @@
-use std::sync::Mutex;
-
-use self::display::{Display, DISPLAY};
-
+mod data;
 pub(crate) mod display;
-pub(crate) mod keypad;
 pub(crate) mod memory;
 pub(crate) mod register;
 pub(crate) mod sprite;
 
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct Chip8 {
-    pub(crate) display: &'static Mutex<Display>,
-    // pub(crate) memory: &'static Mutex<Memory>,
-    i: usize,
     y: usize,
     x: usize,
 }
 
 impl Default for Chip8 {
     fn default() -> Self {
-        Self {
-            display: &DISPLAY,
-            // memory: &MEMORY,
-            i: 0,
-            y: 0,
-            x: 0,
-        }
+        Self { y: 0, x: 0 }
     }
 }
 
 impl Chip8 {
     pub(crate) fn update(&mut self) {
-        self.display.lock().unwrap().flip((self.x, self.y));
+        display::flip((self.x, self.y));
         self.x += 1;
         if self.x >= 64 {
             self.x = 0;

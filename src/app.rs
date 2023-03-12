@@ -1,18 +1,18 @@
-use crate::chip8::{keypad::KeyPad, memory::MemoryDebuger, Chip8};
+use crate::chip8::display;
+use crate::chip8::Chip8;
 
 pub struct MainApp {
     chip8: Chip8,
-    debug: [(Box<dyn DebugWindow>, bool); 2],
+    debug: [(Box<dyn DebugWindow>, bool); 0],
 }
 
 impl MainApp {
-    pub fn new(_cc: &eframe::CreationContext<'_>) -> Self {
+    pub fn new(cc: &eframe::CreationContext<'_>) -> Self {
+        cc.egui_ctx.set_visuals(egui::Visuals::dark());
+
         Self {
             chip8: Chip8::default(),
-            debug: [
-                (Box::new(MemoryDebuger::default()), false),
-                (Box::new(KeyPad::default()), false),
-            ],
+            debug: [],
         }
     }
 }
@@ -31,7 +31,8 @@ impl eframe::App for MainApp {
         });
 
         ctx.request_repaint();
-        egui::CentralPanel::default().show(ctx, |ui| ui.add(*self.chip8.display.lock().unwrap()));
+        // egui::CentralPanel::default().show(ctx, |ui| ui.add(*DISPLAY.lock().unwrap()));
+        egui::CentralPanel::default().show(ctx, |ui| ui.add(display::Display::default()));
     }
 }
 

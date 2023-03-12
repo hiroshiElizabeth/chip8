@@ -41,24 +41,22 @@ mod stack {
 mod pc {
     use std::sync::Mutex;
 
-    pub(crate) static PC: Mutex<ProgramCounter> = Mutex::new(ProgramCounter::new());
+    use crate::chip8::data::address::Address;
 
-    type Addr = usize;
+    pub(crate) static PC: Mutex<ProgramCounter> = Mutex::new(ProgramCounter::new(0));
 
-    #[derive(Debug, Clone, Copy)]
-    pub(crate) struct ProgramCounter {
-        addr: Addr,
-    }
+    #[derive(Default, Debug, Clone, Copy)]
+    pub(crate) struct ProgramCounter(Address);
 
     impl ProgramCounter {
-        const fn new() -> Self {
-            Self { addr: 0 }
+        const fn new(addr: usize) -> Self {
+            Self(Address::new(addr))
         }
-        pub(crate) const fn get(self) -> Addr {
-            self.addr
+        pub(crate) const fn get(self) -> Address {
+            self.0
         }
-        pub(crate) fn jump(&mut self, addr: Addr) {
-            self.addr = addr;
+        pub(crate) fn jump(&mut self, addr: Address) {
+            self.0 = addr;
         }
     }
 }

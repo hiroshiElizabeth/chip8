@@ -23,6 +23,10 @@ const KEYMAP: [(Key, Key); SIZE] = [
     (Key::F, Key::V),
 ];
 
+pub(crate) fn current_key(ui: &mut egui::Ui) -> Option<u8> {
+    // ui.input(|i| i.key_pressed())
+}
+
 #[derive(Default, Debug, Clone, Copy)]
 pub(crate) struct KeyPad;
 

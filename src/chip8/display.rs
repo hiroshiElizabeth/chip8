@@ -1,158 +1,100 @@
-use std::{
-    ops::{Index, IndexMut},
-    sync::Mutex,
-};
+use std::{collections::BTreeSet, sync::Mutex};
+
+use egui::{Pos2, Vec2, Widget};
 
 const WIDTH: usize = 64;
 const HEIGHT: usize = 32;
 
-pub(crate) static DISPLAY: Mutex<Display> = Mutex::new(Display::new());
+static UPDATE_STACK: Mutex<BTreeSet<DisplayPos>> = Mutex::new(BTreeSet::new());
 
-#[derive(Debug, Clone, Copy)]
-pub(crate) struct Display([bool; HEIGHT * WIDTH]);
+pub(crate) fn flip(pos: impl Into<DisplayPos>) -> bool {
+    let mut stack = UPDATE_STACK.lock().unwrap();
+    let pos = pos.into();
 
-impl Display {
-    const fn new() -> Self {
-        Self([false; HEIGHT * WIDTH])
+    if !stack.insert(pos) {
+        stack.remove(&pos);
+        return false;
     }
-    const fn to_index(x: usize, y: usize) -> usize {
-        x + y * WIDTH
-    }
-    pub(crate) fn flip(&mut self, (x, y): (usize, usize)) -> bool {
-        self[(x, y)] ^= true;
-        self[(x, y)]
-    }
+
+    true
 }
 
-impl Index<(usize, usize)> for Display {
-    type Output = bool;
-    fn index(&self, (x, y): (usize, usize)) -> &Self::Output {
-        self.0.get(Self::to_index(x, y)).unwrap()
-    }
-}
-
-impl IndexMut<(usize, usize)> for Display {
-    fn index_mut(&mut self, (x, y): (usize, usize)) -> &mut Self::Output {
-        self.0.get_mut(Self::to_index(x, y)).unwrap()
-    }
-}
-
-impl egui::Widget for Display {
-    fn ui(self, ui: &mut egui::Ui) -> egui::Response {
-        let (response, painter) =
-            ui.allocate_painter(ui.available_size(), egui::Sense::focusable_noninteractive());
-        let size = response.rect.size() / egui::vec2(WIDTH as f32, HEIGHT as f32);
-
-        painter.rect_filled(response.rect, egui::Rounding::none(), egui::Color32::BLACK);
-
-        for x in 0..WIDTH {
-            for y in 0..HEIGHT {
-                if !self[(x, y)] {
-                    continue;
-                }
-                painter.rect_filled(
-                    egui::Rect::from_min_size(
-                        response.rect.left_top() + size * egui::vec2(x as f32, y as f32),
-                        size,
-                    ),
-                    egui::Rounding::none(),
-                    egui::Color32::WHITE,
-                );
-            }
-        }
-
-        response
-    }
-}
-
-/*
-impl egui::Widget for DisplayWidget {
-    fn ui(self, ui: &mut egui::Ui) -> egui::Response {
-        use egui::{Sense, Vec2};
-
-        let (response, painter) =
-            ui.allocate_painter(ui.available_size(), Sense::focusable_noninteractive());
-
-        let pixel = response.rect.size() / Vec2::new(WIDTH as f32, HEIGHT as f32);
-
-        for (y, line) in self.0.into_iter().enumerate() {
-            for x in 0..64 {
-                painter.rect_filled(
-                    egui::Rect::from_min_size(
-                        response.rect.left_top() + egui::vec2(x as f32, y as f32) * pixel,
-                        pixel,
-                    ),
-                    egui::Rounding::none(),
-                    if line & (1 << (63 - x)) == 0 {
-                        egui::Color32::BLACK
-                    } else {
-                        egui::Color32::WHITE
-                    },
-                );
-            }
-        }
-
-        response
-    }
-}
-
+// for egui::Widget
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct Display {
-    data: [u64; HEIGHT],
+    pixels: &'static Mutex<BTreeSet<DisplayPos>>,
 }
 
 impl Default for Display {
     fn default() -> Self {
-        Self { data: [0; HEIGHT] }
-    }
-}
-
-impl Display {
-    const fn new() -> Self {
-        Self { data: [0; HEIGHT] }
-    }
-    pub(super) fn update(&mut self, x: usize, y: usize, sprite: u64) -> u16 {
-        let mut output = 0;
-        for i in 0..8 {
-            let x0 = x + i;
-            if sprite & (0x80 >> i) != 0 {
-                if self.data[y] & (1 << (63 - x0)) != 0 {
-                    output = 1;
-                }
-                self.data[y] ^= 1 << (63 - x0);
-            }
+        Self {
+            pixels: &UPDATE_STACK,
         }
-        output
     }
 }
 
-impl egui::Widget for Display {
+impl Widget for Display {
     fn ui(self, ui: &mut egui::Ui) -> egui::Response {
-        use egui::{Sense, Vec2};
-
         let (response, painter) =
-            ui.allocate_painter(ui.available_size(), Sense::focusable_noninteractive());
+            ui.allocate_painter(ui.available_size(), egui::Sense::focusable_noninteractive());
+        let cell = response.rect.size() / Vec2::new(WIDTH as f32, HEIGHT as f32);
 
-        let pixel = response.rect.size() / Vec2::new(WIDTH as f32, HEIGHT as f32);
+        painter.rect_filled(
+            response.rect,
+            egui::Rounding::default(),
+            egui::Color32::BLACK,
+        );
 
-        for (y, line) in self.data.into_iter().enumerate() {
-            for x in 0..64 {
-                painter.rect_filled(
-                    egui::Rect::from_min_size(
-                        response.rect.left_top() + egui::vec2(x as f32, y as f32) * pixel,
-                        pixel,
-                    ),
-                    egui::Rounding::none(),
-                    if line & (1 << (63 - x)) == 0 {
-                        egui::Color32::BLACK
-                    } else {
-                        egui::Color32::WHITE
-                    },
-                );
-            }
+        for &pos in self.pixels.lock().unwrap().iter() {
+            let pos: egui::Pos2 = pos.into();
+            painter.rect_filled(
+                egui::Rect::from_min_size(response.rect.left_top() + pos.to_vec2() * cell, cell),
+                egui::Rounding::none(),
+                egui::Color32::WHITE,
+            );
         }
 
         response
     }
 }
-*/
+
+// Display position
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) struct DisplayPos {
+    x: usize,
+    y: usize,
+}
+
+impl From<(usize, usize)> for DisplayPos {
+    fn from((x, y): (usize, usize)) -> Self {
+        Self { x, y }
+    }
+}
+
+impl From<DisplayPos> for usize {
+    fn from(DisplayPos { x, y }: DisplayPos) -> Self {
+        x + y * WIDTH
+    }
+}
+
+impl From<DisplayPos> for Pos2 {
+    fn from(DisplayPos { x, y }: DisplayPos) -> Self {
+        Self::new(x as f32, y as f32)
+    }
+}
+
+impl PartialOrd for DisplayPos {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        let a: usize = self.clone().into();
+        let b: usize = other.clone().into();
+        a.partial_cmp(&b)
+    }
+}
+
+impl Ord for DisplayPos {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        let a: usize = self.clone().into();
+        let b: usize = other.clone().into();
+        a.cmp(&b)
+    }
+}

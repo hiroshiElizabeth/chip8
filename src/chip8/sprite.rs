@@ -19,6 +19,20 @@ const DATA: [u8; SIZE] = [
     0xF0, 0x80, 0xF0, 0x80, 0x80, // F
 ];
 
+pub(crate) struct Sprite(u8);
+
+impl From<u8> for Sprite {
+    fn from(value: u8) -> Self {
+        Sprite(value)
+    }
+}
+
+impl From<Sprite> for u8 {
+    fn from(value: Sprite) -> Self {
+        value.0
+    }
+}
+
 pub(super) const fn load<const N: usize>(mut data: [u8; N], start: usize) -> [u8; N] {
     let mut i = 0;
     while i < SIZE {
